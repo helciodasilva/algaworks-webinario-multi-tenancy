@@ -5,10 +5,20 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
+
+import com.algaworks.webinario.multi.tenancy.tenancy.TenancyInterceptor;
 
 @Entity
 @Table(name = "funcionario")
+@FilterDef(name = "tenant", parameters = { @ParamDef(name = "id", type = "string") })
+@Filter(name = "tenant", condition = "tenant_id = :id")
 public class Funcionario {
 
 	@Id
@@ -30,6 +40,15 @@ public class Funcionario {
 	public Funcionario(String nome, String tenantId) {
 		this(nome);
 		this.tenantId = tenantId;
+	}
+
+	@PrePersist
+	@PreUpdate
+	private void tenantId() {
+		String tenantId = TenancyInterceptor.getTenantId();
+		if (tenantId != null) {
+			this.tenantId = tenantId;
+		}
 	}
 
 	public Long getCodigo() {
